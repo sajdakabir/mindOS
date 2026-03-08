@@ -1,0 +1,30 @@
+{
+	"name": "@mindos/core",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"clean": "rm -rf dist .turbo"
+	},
+	"dependencies": {
+		"@mindos/shared": "workspace:*",
+		"@mindos/db": "workspace:*",
+		"openai": "^4.80.0"
+	},
+	"devDependencies": {
+		"typescript": "^5.7.0",
+		"vitest": "^3.0.0"
+	}
+}

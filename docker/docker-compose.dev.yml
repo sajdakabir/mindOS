@@ -1,0 +1,17 @@
+# Development overrides — use with:
+# docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  # In dev, run the API locally with `pnpm dev` instead of in Docker.
+  # This compose file only provides Postgres and Redis.
+  api:
+    profiles:
+      - full  # Only starts with `--profile full`
