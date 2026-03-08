@@ -15,3 +15,5 @@ export {
 	enqueueFactExtraction,
 	scheduleExpiryCleanup,
 } from "./worker/queue.js";
+export type { MindOSPlugin, PluginConfig, OAuthTokens } from "./plugins/interface.js";
+export { PluginRegistry } from "./plugins/registry.js";
