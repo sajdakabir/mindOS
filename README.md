@@ -37,7 +37,7 @@ LLMs have no memory between conversations. Users repeat context every time. **mi
 ### Option 1: Docker (recommended)
 
 ```bash
-git clone https://github.com/yourusername/mindos.git && cd mindos
+git clone https://github.com/sajdakabir/mindOS.git && cd mindos
 cp .env.example .env        # Add your OPENAI_API_KEY
 cd docker && docker compose up
 ```
@@ -47,7 +47,7 @@ Your API is running at `http://localhost:3000`.
 ### Option 2: Local Development
 
 ```bash
-git clone https://github.com/yourusername/mindos.git && cd mindos
+git clone https://github.com/sajdakabir/mindOS.git && cd mindos
 pnpm install
 cp .env.example .env        # Configure DATABASE_URL, OPENAI_API_KEY
 
@@ -215,8 +215,8 @@ Use the included `deploy/render.yaml` Blueprint.
 mindOS/
 ├── apps/
 │   ├── api/          # Hono REST API server
-│   ├── dashboard/    # Next.js admin UI (coming soon)
-│   └── mcp/          # MCP server for IDE integration (coming soon)
+│   ├── dashboard/    # Next.js admin UI
+│   └── mcp/          # MCP server for IDE integration
 ├── packages/
 │   ├── core/         # Memory engine (search, extraction, profiles)
 │   ├── db/           # Drizzle schema, migrations, queries
@@ -242,7 +242,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/mindos.git && cd mindos
+git clone https://github.com/sajdakabir/mindOS.git && cd mindos
 pnpm install
 
 # Start infra
@@ -266,14 +266,16 @@ pnpm lint:fix
 - [x] Memory CRUD API
 - [x] Hybrid search (vector + keyword + RRF)
 - [x] Docker Compose self-hosting
-- [ ] Fact extraction pipeline
-- [ ] Contradiction resolution
-- [ ] User profiles (static + dynamic)
-- [ ] MCP server for IDE integration
-- [ ] TypeScript SDK (`@mindos/sdk`)
-- [ ] Dashboard UI
-- [ ] Plugin system (Google Drive, Notion, GitHub)
-- [ ] Ollama support (fully local, no API key needed)
+- [x] Fact extraction pipeline
+- [x] Contradiction resolution
+- [x] User profiles (static + dynamic)
+- [x] MCP server for IDE integration
+- [x] TypeScript SDK (`@mindos/sdk`)
+- [x] Dashboard UI
+- [x] Plugin system (Google Drive, Notion, GitHub)
+- [x] Ollama support (fully local, no API key needed)
+- [x] CI/CD (GitHub Actions)
+- [x] Test suite (Vitest)
 - [ ] Python SDK
 
 ## License

@@ -97,10 +97,10 @@ export default function MemoriesPage() {
 						onChange={(e) => setQuery(e.target.value)}
 						onKeyDown={(e) => e.key === "Enter" && searchMemories()}
 					/>
-					<button className="btn-primary" onClick={searchMemories} disabled={loading}>
+					<button type="button" className="btn-primary" onClick={searchMemories} disabled={loading}>
 						Search
 					</button>
-					<button onClick={loadMemories} disabled={loading}>
+					<button type="button" onClick={loadMemories} disabled={loading}>
 						List All
 					</button>
 				</div>

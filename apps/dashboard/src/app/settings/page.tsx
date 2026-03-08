@@ -35,7 +35,7 @@ export default function SettingsPage() {
 
 				<div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
 					<input placeholder="Key name" value={name} onChange={(e) => setName(e.target.value)} />
-					<button className="btn-primary" onClick={createKey}>
+					<button type="button" className="btn-primary" onClick={createKey}>
 						Create
 					</button>
 				</div>

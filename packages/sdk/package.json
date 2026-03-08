@@ -15,11 +15,13 @@
 		"build": "tsc",
 		"dev": "tsc --watch",
 		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
 		"clean": "rm -rf dist .turbo"
 	},
 	"dependencies": {},
 	"devDependencies": {
-		"typescript": "^5.7.0"
+		"typescript": "^5.7.0",
+		"vitest": "^3.0.0"
 	},
 	"license": "MIT",
 	"keywords": ["ai", "memory", "llm", "rag", "vector-search", "mindos"],
