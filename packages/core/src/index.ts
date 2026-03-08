@@ -1,8 +1,10 @@
 export { MemoryEngine } from "./engine.js";
 export type { EmbeddingProvider } from "./embeddings/provider.js";
 export { OpenAIEmbeddingProvider } from "./embeddings/openai.js";
+export { OllamaEmbeddingProvider } from "./embeddings/ollama.js";
 export type { LLMProvider } from "./llm/provider.js";
 export { OpenAILLMProvider } from "./llm/openai.js";
+export { OllamaLLMProvider } from "./llm/ollama.js";
 export { HybridSearch } from "./search/hybrid-search.js";
 export { FactExtractor } from "./extraction/fact-extractor.js";
 export { ContradictionDetector } from "./contradiction/detector.js";

@@ -1,12 +1,15 @@
 import { serve } from "@hono/node-server";
 import {
+	type EmbeddingProvider,
+	type LLMProvider,
 	MemoryEngine,
+	OllamaEmbeddingProvider,
+	OllamaLLMProvider,
 	OpenAIEmbeddingProvider,
 	OpenAILLMProvider,
 	ProfileBuilder,
 	createJobQueue,
 	createWorker,
-	enqueueFactExtraction,
 	scheduleExpiryCleanup,
 } from "@mindos/core";
 import { createDatabase } from "@mindos/db";
@@ -27,28 +30,53 @@ import { userRoutes } from "./routes/users.js";
 const PORT = Number.parseInt(process.env.PORT ?? "3000", 10);
 const DATABASE_URL = process.env.DATABASE_URL;
 const REDIS_URL = process.env.REDIS_URL;
+const OLLAMA_URL = process.env.OLLAMA_URL;
+const useOllama = !!OLLAMA_URL;
 
 if (!DATABASE_URL) {
 	console.error("DATABASE_URL is required");
 	process.exit(1);
 }
 
-// ─── Initialize Services ───────────────────────────────────────────────────
+if (!useOllama && !process.env.OPENAI_API_KEY) {
+	console.error("Either OPENAI_API_KEY or OLLAMA_URL is required");
+	process.exit(1);
+}
+
+// ─── Initialize Providers (auto-detect Ollama vs OpenAI) ────────────────────
 
 const db = createDatabase(DATABASE_URL);
 
-const embeddingProvider = new OpenAIEmbeddingProvider({
-	apiKey: process.env.OPENAI_API_KEY,
-	model: process.env.EMBEDDING_MODEL,
-	dimensions: process.env.EMBEDDING_DIMENSIONS
-		? Number.parseInt(process.env.EMBEDDING_DIMENSIONS, 10)
-		: undefined,
-});
+let embeddingProvider: EmbeddingProvider;
+let llmProvider: LLMProvider;
 
-const llmProvider = new OpenAILLMProvider({
-	apiKey: process.env.OPENAI_API_KEY,
-	model: process.env.LLM_MODEL ?? "gpt-4o-mini",
-});
+if (useOllama) {
+	console.log(`Using Ollama at ${OLLAMA_URL} (fully local, no API key needed)`);
+	embeddingProvider = new OllamaEmbeddingProvider({
+		baseUrl: OLLAMA_URL,
+		model: process.env.OLLAMA_EMBEDDING_MODEL ?? "nomic-embed-text",
+		dimensions: process.env.EMBEDDING_DIMENSIONS
+			? Number.parseInt(process.env.EMBEDDING_DIMENSIONS, 10)
+			: 768,
+	});
+	llmProvider = new OllamaLLMProvider({
+		baseUrl: OLLAMA_URL,
+		model: process.env.OLLAMA_LLM_MODEL ?? "llama3.2",
+	});
+} else {
+	console.log("Using OpenAI");
+	embeddingProvider = new OpenAIEmbeddingProvider({
+		apiKey: process.env.OPENAI_API_KEY,
+		model: process.env.EMBEDDING_MODEL,
+		dimensions: process.env.EMBEDDING_DIMENSIONS
+			? Number.parseInt(process.env.EMBEDDING_DIMENSIONS, 10)
+			: undefined,
+	});
+	llmProvider = new OpenAILLMProvider({
+		apiKey: process.env.OPENAI_API_KEY,
+		model: process.env.LLM_MODEL ?? "gpt-4o-mini",
+	});
+}
 
 const engine = new MemoryEngine(db, embeddingProvider);
 const profileBuilder = new ProfileBuilder(db, llmProvider);
@@ -59,7 +87,7 @@ let jobQueue: ReturnType<typeof createJobQueue> | null = null;
 
 if (REDIS_URL) {
 	jobQueue = createJobQueue(REDIS_URL);
-	const worker = createWorker(REDIS_URL, db, llmProvider, embeddingProvider);
+	createWorker(REDIS_URL, db, llmProvider, embeddingProvider);
 	scheduleExpiryCleanup(jobQueue).catch(console.error);
 	console.log("BullMQ worker started (fact extraction + expiry cleanup)");
 } else {
@@ -70,17 +98,12 @@ if (REDIS_URL) {
 
 const app = new Hono();
 
-// Global middleware
 app.use("*", cors());
 app.use("*", logger());
-
-// Error handler
 app.onError(errorHandler);
 
-// Public routes (no auth)
+// Public routes
 app.route("/", healthRoutes(db));
-
-// API key creation (bootstrap route — in production, protect this differently)
 app.route("/v1/api-keys", apiKeyRoutes(db));
 
 // Protected routes
@@ -93,13 +116,12 @@ api.route("/profiles", profileRoutes(db, profileBuilder));
 
 app.route("/v1", api);
 
-// Root
 app.get("/", (c) =>
 	c.json({
 		name: "mindOS",
-		version: "0.2.0",
+		version: "0.3.0",
 		description: "The open-source AI memory engine",
-		docs: "/v1/openapi.json",
+		provider: useOllama ? "ollama" : "openai",
 	}),
 );
 
