@@ -1,4 +1,5 @@
 import type { MemoryEngine } from "@mindos/core";
+import { enqueueFactExtraction } from "@mindos/core";
 import {
 	addMemorySchema,
 	batchAddMemorySchema,
@@ -6,9 +7,10 @@ import {
 	searchQuerySchema,
 	updateMemorySchema,
 } from "@mindos/shared";
+import type { Queue } from "bullmq";
 import { Hono } from "hono";
 
-export function memoryRoutes(engine: MemoryEngine) {
+export function memoryRoutes(engine: MemoryEngine, jobQueue?: Queue | null) {
 	const app = new Hono();
 
 	// POST /v1/memories — Add a memory
@@ -16,6 +18,12 @@ export function memoryRoutes(engine: MemoryEngine) {
 		const body = await c.req.json();
 		const input = addMemorySchema.parse(body);
 		const memory = await engine.addMemory(input);
+
+		// Enqueue fact extraction if BullMQ is available
+		if (jobQueue && input.extractFacts !== false) {
+			await enqueueFactExtraction(jobQueue, memory.id, input.userId, input.content);
+		}
+
 		return c.json({ data: memory }, 202);
 	});
 
@@ -78,7 +86,15 @@ export function memoryRoutes(engine: MemoryEngine) {
 		const body = await c.req.json();
 		const { memories } = batchAddMemorySchema.parse(body);
 
-		const results = await Promise.allSettled(memories.map((m) => engine.addMemory(m)));
+		const results = await Promise.allSettled(
+			memories.map(async (m) => {
+				const memory = await engine.addMemory(m);
+				if (jobQueue && m.extractFacts !== false) {
+					await enqueueFactExtraction(jobQueue, memory.id, m.userId, m.content);
+				}
+				return memory;
+			}),
+		);
 
 		const succeeded = results
 			.filter(

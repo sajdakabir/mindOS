@@ -1,5 +1,14 @@
 import { serve } from "@hono/node-server";
-import { MemoryEngine, OpenAIEmbeddingProvider } from "@mindos/core";
+import {
+	MemoryEngine,
+	OpenAIEmbeddingProvider,
+	OpenAILLMProvider,
+	ProfileBuilder,
+	createJobQueue,
+	createWorker,
+	enqueueFactExtraction,
+	scheduleExpiryCleanup,
+} from "@mindos/core";
 import { createDatabase } from "@mindos/db";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -7,14 +16,17 @@ import { logger } from "hono/logger";
 import { authMiddleware } from "./middleware/auth.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { apiKeyRoutes } from "./routes/apikeys.js";
+import { factRoutes } from "./routes/facts.js";
 import { healthRoutes } from "./routes/health.js";
 import { memoryRoutes } from "./routes/memories.js";
+import { profileRoutes } from "./routes/profiles.js";
 import { userRoutes } from "./routes/users.js";
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 
 const PORT = Number.parseInt(process.env.PORT ?? "3000", 10);
 const DATABASE_URL = process.env.DATABASE_URL;
+const REDIS_URL = process.env.REDIS_URL;
 
 if (!DATABASE_URL) {
 	console.error("DATABASE_URL is required");
@@ -33,7 +45,26 @@ const embeddingProvider = new OpenAIEmbeddingProvider({
 		: undefined,
 });
 
+const llmProvider = new OpenAILLMProvider({
+	apiKey: process.env.OPENAI_API_KEY,
+	model: process.env.LLM_MODEL ?? "gpt-4o-mini",
+});
+
 const engine = new MemoryEngine(db, embeddingProvider);
+const profileBuilder = new ProfileBuilder(db, llmProvider);
+
+// ─── BullMQ Worker (optional, requires Redis) ──────────────────────────────
+
+let jobQueue: ReturnType<typeof createJobQueue> | null = null;
+
+if (REDIS_URL) {
+	jobQueue = createJobQueue(REDIS_URL);
+	const worker = createWorker(REDIS_URL, db, llmProvider, embeddingProvider);
+	scheduleExpiryCleanup(jobQueue).catch(console.error);
+	console.log("BullMQ worker started (fact extraction + expiry cleanup)");
+} else {
+	console.warn("REDIS_URL not set — background jobs disabled (fact extraction won't run)");
+}
 
 // ─── Hono App ───────────────────────────────────────────────────────────────
 
@@ -55,8 +86,10 @@ app.route("/v1/api-keys", apiKeyRoutes(db));
 // Protected routes
 const api = new Hono();
 api.use("*", authMiddleware(db));
-api.route("/memories", memoryRoutes(engine));
+api.route("/memories", memoryRoutes(engine, jobQueue));
 api.route("/users", userRoutes(engine));
+api.route("/facts", factRoutes(db));
+api.route("/profiles", profileRoutes(db, profileBuilder));
 
 app.route("/v1", api);
 
@@ -64,7 +97,7 @@ app.route("/v1", api);
 app.get("/", (c) =>
 	c.json({
 		name: "mindOS",
-		version: "0.1.0",
+		version: "0.2.0",
 		description: "The open-source AI memory engine",
 		docs: "/v1/openapi.json",
 	}),

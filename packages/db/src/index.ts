@@ -20,3 +20,5 @@ export * from "./schema/index.js";
 export * from "./queries/memories.js";
 export * from "./queries/users.js";
 export * from "./queries/search.js";
+export * from "./queries/facts.js";
+export * from "./queries/profiles.js";

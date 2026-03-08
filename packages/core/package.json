@@ -21,6 +21,8 @@
 	"dependencies": {
 		"@mindos/shared": "workspace:*",
 		"@mindos/db": "workspace:*",
+		"bullmq": "^5.34.0",
+		"drizzle-orm": "^0.38.0",
 		"openai": "^4.80.0"
 	},
 	"devDependencies": {
