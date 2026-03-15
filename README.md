@@ -110,6 +110,13 @@ curl -X POST http://localhost:3000/v1/memories/search \
 - **MCP Server** — Integrates with Claude Desktop, Cursor, VS Code
 - **Multi-tenancy** — Scope memories by user, organization, or project
 
+### Benchmarking
+- **LoCoMo Benchmark** — Evaluate memory accuracy on the LoCoMo conversational dataset
+- **6-Stage Pipeline** — Ingest, index, search, answer, evaluate, report
+- **LLM Judge** — GPT-4o/GPT-4o-mini scoring or fast F1-based judge
+- **Performance Tests** — Search latency (P50/P95/P99) and ingestion throughput
+- **CLI** — `mindos-bench run`, `mindos-bench perf`, `mindos-bench info`
+
 ### Infrastructure
 - **Zero vendor lock-in** — PostgreSQL + any S3-compatible storage
 - **One-click deploy** — Docker Compose, Railway, Render
@@ -218,6 +225,7 @@ mindOS/
 │   ├── dashboard/    # Next.js admin UI
 │   └── mcp/          # MCP server for IDE integration
 ├── packages/
+│   ├── bench/        # Benchmark suite (LoCoMo, perf tests)
 │   ├── core/         # Memory engine (search, extraction, profiles)
 │   ├── db/           # Drizzle schema, migrations, queries
 │   ├── sdk/          # TypeScript SDK
